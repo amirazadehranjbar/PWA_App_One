@@ -1,4 +1,5 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
+import {baseURL, XParseApplicationId, XParseRESTAPIKey} from "../../../info.js";
 
 // Async thunk
 //region fetch movies
@@ -6,11 +7,11 @@ export const fetchMovies = createAsyncThunk(
     "movies/fetchMovies",
     async (_, thunkAPI) => {
         try {
-            const response = await fetch("https://parseapi.back4app.com/classes/movies", {
+            const response = await fetch(baseURL, {
                 method: "GET",
                 headers: {
-                    "X-Parse-Application-Id": "yQ4VwNXWCjBIOJMyo6WKPr4Zv5znl7v1wFKguEvL",
-                    "X-Parse-REST-API-Key": "ch3aXQMg2kFqTPq4hXlAlGRUCToBtIjqZJ3zXzmE",
+                    "X-Parse-Application-Id": XParseApplicationId,
+                    "X-Parse-REST-API-Key": XParseRESTAPIKey,
                     "Content-Type": "application/json",
                 },
             });
@@ -29,7 +30,8 @@ export const postMovie = createAsyncThunk(
     "movies/postMovie",
     async (newMovie,thunkAPI)=>{
         try {
-            const response = await fetch("https://parseapi.back4app.com/classes/movies", {
+            console.log(baseURL)
+            const response = await fetch(baseURL, {
                 method: "POST",
                 headers: {
                     "X-Parse-Application-Id": "yQ4VwNXWCjBIOJMyo6WKPr4Zv5znl7v1wFKguEvL",
@@ -50,9 +52,10 @@ export const postMovie = createAsyncThunk(
 export const deleteMovie = createAsyncThunk(
     "movies/deleteMovie",
     async (movieID,thunkAPI)=>{
+
         try {
 
-            await fetch(`https://parseapi.back4app.com/classes/movies/${movieID}`,{
+            await fetch(`${baseURL}/${movieID}`,{
                 method:"DELETE",
                 headers: {
                     "X-Parse-Application-Id": "yQ4VwNXWCjBIOJMyo6WKPr4Zv5znl7v1wFKguEvL",
