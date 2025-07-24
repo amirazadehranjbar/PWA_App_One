@@ -1,91 +1,67 @@
-// public/sw.js
+const CACHE_NAME = "v1";
 
 const addResourcesToCache = async (resources) => {
-    const cache = await caches.open('v1');
+    const cache = await caches.open(CACHE_NAME);
     await cache.addAll(resources);
+    // cache.keys().then(result=>{
+    //   result.map(res=>{
+    //     console.log(res.url)})})
 };
 
-const putInCache = async (request, response) => {
-    const cache = await caches.open('v1');
-    await cache.put(request, response);
-};
-
-const cacheFirst = async ({ request, preloadResponsePromise, fallbackUrl }) => {
-    // First try to get the resource from the cache
-    const responseFromCache = await caches.match(request);
-    if (responseFromCache) {
-        return responseFromCache;
-    }
-
-    // Next try to use the preloaded response, if it's there
-    // NOTE: Chrome throws errors regarding preloadResponse, see:
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=1420515
-    // https://github.com/mdn/dom-examples/issues/145
-    // To avoid those errors, remove or comment out this block of preloadResponse
-    // code along with enableNavigationPreload() and the "activate" listener.
-    const preloadResponse = await preloadResponsePromise;
-    if (preloadResponse) {
-        console.info('using preload response', preloadResponse);
-        await putInCache(request, preloadResponse.clone());
-        return preloadResponse;
-    }
-
-    // Next try to get the resource from the network
-    try {
-        const responseFromNetwork = await fetch(request.clone());
-        // response may be used only once
-        // we need to save clone to put one copy in cache
-        // and serve second one
-        await putInCache(request, responseFromNetwork.clone());
-        return responseFromNetwork;
-    } catch (error) {
-        const fallbackResponse = await caches.match(fallbackUrl);
-        if (fallbackResponse) {
-            return fallbackResponse;
-        }
-        // when even the fallback response is not available,
-        // there is nothing we can do, but we must always
-        // return a Response object
-        return new Response('Network error happened', {
-            status: 408,
-            headers: { 'Content-Type': 'text/plain' },
-        });
-    }
-};
-
-const enableNavigationPreload = async () => {
-    if (self.registration.navigationPreload) {
-        // Enable navigation preloads!
-        await self.registration.navigationPreload.enable();
-    }
-};
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil(enableNavigationPreload());
-});
-
-self.addEventListener('install', (event) => {
+// install service worker
+self.addEventListener("install", (event) => {
     event.waitUntil(
         addResourcesToCache([
-            './',
-            './index.html',
-            './index.css',
-            './app.js',
-            '/static/js/bundle.js'
+            "/",
+            "/index.html",
+            "/index.css",
+            "/app.js",
+            "/offline.html",
+            "/images/fallback.png"
         ])
     );
 });
 
-self.addEventListener('fetch', (event) => {
-    if (event.request.url.startsWith('chrome-extension://')) {
-        // Ignore extension requests
-        return;
-    }
+// activate service worker
+self.addEventListener("activate", (event) => {
+
+    console.info("activate sw....");
+
+    event.waitUntil(
+        caches.keys().then((names) =>
+            Promise.all(
+                names
+                    .filter((name) => name !== CACHE_NAME)
+                    .map((name) => caches.delete(name))
+            )
+        )
+    );
+
+});
+
+// fetch event
+self.addEventListener("fetch", (event) => {
     event.respondWith(
-        cacheFirst({
-            request: event.request,
-            preloadResponsePromise: event.preloadResponse,
-            fallbackUrl: './gallery/myLittleVader.jpg',
+        caches.match(event.request).then((cachedResponse) => {
+            // 1) Serve from cache if available
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+
+            // 2) Try to fetch from network
+            return fetch(event.request).catch(() => {
+                // 3) If offline and request is a navigation (HTML page)
+                if (event.request.mode === "navigate") {
+                    return caches.match("/offline.html");
+                }
+
+                // 4) If request is an image (you can add more types)
+                if (event.request.destination === "image") {
+                    return caches.match("/images/offline.png");
+                }
+            });
         })
     );
 });
+
+

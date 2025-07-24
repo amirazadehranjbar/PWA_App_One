@@ -20,43 +20,58 @@ createRoot(document.getElementById('root')).render(
 
 //region install app
 window.addEventListener("beforeinstallprompt", (e) => {
-    // Prevent Chrome 67 and earlier from automatically showing the prompt
     e.preventDefault();
-    // Stash the event so it can be triggered later.
     let deferredPrompt = e;
-    // Update UI to notify the user they can add to home screen
-    let installDiv=document.getElementById('installAppDiv');
-    let yesBtn=document.getElementById('yes');
-    let noBtn=document.getElementById('no');
-    // addBtn.style.display = "block";
 
-    yesBtn.addEventListener("click", (e) => {
-        // hide our user interface that shows our A2HS button
+    const installDiv = document.getElementById("installAppDiv");
+    const yesBtn = document.getElementById("yes");
+    const noBtn = document.getElementById("no");
+
+    if (!installDiv || !yesBtn || !noBtn) return;
+
+    yesBtn.addEventListener("click", () => {
         installDiv.style.display = "none";
-        // Show the prompt
         deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
         deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === "accepted") {
-                console.log("User accepted the A2HS prompt");
-            } else {
-                console.log("User dismissed the A2HS prompt");
-            }
+            console.log(choiceResult.outcome === "accepted"
+                ? "User accepted the A2HS prompt"
+                : "User dismissed the A2HS prompt");
             deferredPrompt = null;
         });
     });
 
-
-    noBtn.addEventListener('click',(e)=>{
+    noBtn.addEventListener("click", () => {
         installDiv.style.display = "none";
-    })
+    });
 });
+
+//endregion
+
+//region worker
+const registerServiceWorker = async () => {
+    if ("serviceWorker" in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register("/sw.js", {
+                scope: "/",
+            });
+
+            if (registration.installing) {
+                console.log("Service worker installing");
+            } else if (registration.waiting) {
+                console.log("Service worker installed");
+            } else if (registration.active) {
+                console.log("Service worker active");
+            }
+        } catch (error) {
+            console.error(`Registration failed with ${error}`);
+        }
+    }
+};
 
 //endregion
 
 
 
-
-// registerServiceWorker();
+registerServiceWorker();
 
 

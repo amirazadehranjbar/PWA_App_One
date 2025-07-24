@@ -26,7 +26,7 @@ export default function ScrollAnimations() {
     return (
         <div style={container}>
 
-            {error && <div className="text-3xl font-bold text-slate-950"> {error.errorMessage.toString()} </div>}
+            {error && <div className="text-3xl font-bold text-slate-950"> {`check your internet connection ${error.toString()}`} </div>}
 
             {isLoading && <div className="text-3xl font-bold text-slate-950"> Loading .... </div>}
 
